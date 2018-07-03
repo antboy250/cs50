@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     // ensure proper usage
     if (argc != 4)
     {
-        fprintf(stderr, "Usage: copy infile outfile\n");
+        fprintf(stderr, "Usage: ./resize <factor> infile outfile\n");
         return 1;
     }
 
@@ -68,9 +68,10 @@ int main(int argc, char *argv[])
 
     BITMAPINFOHEADER bires;
     bires = bi;
-
+    // bfres.bfSize = bf.bfSize*multiplier*multiplier;
     bires.biWidth = bi.biWidth*multiplier;
     bires.biHeight = bi.biHeight*multiplier;
+
     // ensure infile is (likely) a 24-bit uncompressed BMP 4.0
     if (bf.bfType != 0x4d42 || bf.bfOffBits != 54 || bi.biSize != 40 ||
         bi.biBitCount != 24 || bi.biCompression != 0)
@@ -81,15 +82,19 @@ int main(int argc, char *argv[])
         return 4;
     }
 
+    //get the biSizeImage correct then add 54 for the bfSize
+
+    // determine padding for scanlines
+    double padding = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+    double paddingonnew = (4-((int)(bi.biWidth * sizeof(RGBTRIPLE) * (double)multiplier)) % 4) % 4;
+    //bfres.bfSize = (bires.biWidth * bires.biHeight) + (paddingonnew * bires.biHeight);
+
     // write outfile's BITMAPFILEHEADER
     fwrite(&bfres, sizeof(BITMAPFILEHEADER), 1, outptr);
 
     // write outfile's BITMAPINFOHEADER
     fwrite(&bires, sizeof(BITMAPINFOHEADER), 1, outptr);
 
-    // determine padding for scanlines
-    double padding = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
-    double paddingonnew = (4-(bi.biWidth * sizeof(RGBTRIPLE) * (int)multiplier) % 4) % 4;
     // iterate over infile's scanlines
     for (double i = 0, biresHeight = abs(bires.biHeight); i < biresHeight; i++)
     {

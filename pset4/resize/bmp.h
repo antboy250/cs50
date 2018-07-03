@@ -41,10 +41,11 @@ BITMAPINFOHEADER;
 
 // relative intensities of red, green, and blue
 // https://msdn.microsoft.com/en-us/library/dd162939(v=vs.85).aspx
-typedef struct
+/*typedef struct
 {
-    BYTE rgbtBlue;
-    BYTE rgbtGreen;
-    BYTE rgbtRed;
+    BYTE firstsig;
+    BYTE secondsig;
+    BYTE thirdsig;
+    WORD halfof4thsig;
 } __attribute__((__packed__))
-RGBTRIPLE;
+JPEGSIGN;*/
