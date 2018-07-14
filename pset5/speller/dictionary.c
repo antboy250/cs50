@@ -41,16 +41,16 @@ trie* getNode(void)
 //inserting function
 void insert(trie* root, char word[46])
 {
-
-    for(int g = 0; g < strlen(word); g++)
+    int length = strlen(word);
+    for(int g = 0; g < length; g++)
     {
-        char one = word[g];
+        int index = char2ind(word[g]);
         //checks if the index of the array at that node is pointing to NULL if it is makes it point to another node
-        if(!root->alphabet[char2ind(one)])
+        if(!root->alphabet[index])
         {
-            root->alphabet[char2ind(one)] = getNode();
+            root->alphabet[index] = getNode();
         }
-        root = root->alphabet[char2ind(one)];
+        root = root->alphabet[index];
     }
     root->endword = true;
 }
@@ -60,21 +60,20 @@ bool searcher(trie* lookup, const char *wordsear)
 {
     // trie* search = lookup;
     int index;
-    for(int i = 0; i < strlen(wordsear); i++)
+    int length = strlen(wordsear);
+    for(int i = 0; i < length; i++)
     {
-        if(isalpha(wordsear[i]) != 0)
-        {
-            index = char2ind(tolower(wordsear[i]));
-        }
-        else if(wordsear[i] == '\'')
+        index = char2ind(tolower(wordsear[i]));
+        if(index == -58)
         {
             index = 26;
         }
-        if(!lookup->alphabet[index])
+        if(lookup->alphabet[index])
         {
-            return false;
+            lookup = lookup->alphabet[index];
         }
-        lookup = lookup->alphabet[index];
+        else
+            return false;
     }
     return lookup->endword;
 }
@@ -103,8 +102,7 @@ int words = 0;
 // Returns true if word is in dictionary else false
 bool check(const char *word)
 {
-    if(searcher(root, word) == true)
-        return true;
+    return searcher(root, word);
 
     return false;
 }
@@ -123,22 +121,18 @@ bool load(const char *dictionary)
     for (c = fgetc(dict); c != EOF; c = fgetc(dict))
     {
         // Allow only alphabetical characters and apostrophes
-        if (isalpha(c) || c == '\'')
+        // Append character to word
+        if(c == '\'')
         {
-            // Append character to word
-            if(c == '\'')
-            {
-                c = '{';
-            }
-            char d = tolower(c);
-            letters[index] = d;
-            index++;
-
+            c = '{';
         }
-        else if (index > 0)
+        char d = tolower(c);
+        letters[index] = d;
+        index++;
+        if(c == '\n')
         {
             // Terminate current word
-            letters[index] = '\0';
+            letters[index-1] = '\0';
             insert(trav, letters);
             // Update counter
             words++;
