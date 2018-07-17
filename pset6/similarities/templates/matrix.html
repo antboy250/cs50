@@ -1,1 +1,36 @@
-<!-- TODO -->
+{% extends "layout.html" %}
+
+{% block body %}
+
+    <style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    /*tr:nth-child(even) {*/
+    /*    background-color: #dddddd;*/
+    /*}*/
+    </style>
+
+    <!-- TODO -->
+    {% set empty = "" %}
+    <table>
+        <tbody>
+                {% for y in range(s1|length + 2) %}
+                    <tr>
+                    {% for x in range(s2|length + 2) %}
+                        <td>{{matrix[y][x][0]}}</td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
