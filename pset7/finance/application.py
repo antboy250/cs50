@@ -45,7 +45,18 @@ db = SQL("sqlite:///finance.db")
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return apology("TODO")
+    initial = db.execute("SELECT * FROM userstocks WHERE id = :uid;", uid=session["user_id"])
+    print(initial)
+    newcash = db.execute("SELECT cash FROM users WHERE id = :sid;", sid=session["user_id"])
+    sumtotal = 0
+    for p in range(len(initial)):
+        stockinf = lookup(initial[p]['stock'])
+        print(stockinf)
+        initial[p]['price'] = stockinf['price']
+        initial[p]['total'] = initial[p]['numshares'] * initial[p]['price']
+        sumtotal += initial[p]['total']
+    sumtotal += newcash[0]['cash']
+    return render_template("index.html", matrix=initial, newcash=newcash[0]['cash'], sumtotal=sumtotal)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -57,17 +68,34 @@ def buy():
         numshares = float(request.form.get("numshares"))
         if not stockinfo:
             return apology("Stock Symbol or Number of Shares invalid", 403)
+        stocks = db.execute("SELECT * FROM userstocks WHERE id = :pid;", pid=session["user_id"])
+        sumofdeleted = 0
+        # if user already has the stocks just adds to the current amount the user has the number of shares the user bought currently
+        for row in range(len(stocks)):
+            if stockinfo["symbol"] == stocks[row]['stock']:
+                sumofdeleted = stocks[row]['numshares'] * stockinfo['price']
+                addedshares = numshares
+                numshares += stocks[row]['numshares']
+                db.execute("DELETE FROM userstocks WHERE id = :sesh and stock = :sto;", sesh=session["user_id"], sto=request.form.get("symbol"))
+
         price = float(stockinfo["price"])
-        eprint(session["user_id"])
         rows = db.execute("SELECT cash FROM users WHERE id = :cid;", cid=session["user_id"])
         oldcash = float(rows[0]["cash"])
-        print(oldcash)
         totalprice = price * numshares
-        newcash = oldcash - totalprice
+        newcash = oldcash - totalprice + sumofdeleted
+        if newcash < 0:
+            return apology("Not enough cash in account", 403)
         print(newcash)
         db.execute("UPDATE users SET cash = :c WHERE id = :sid;", c=newcash, sid=session["user_id"])
-        db.execute("INSERT into userstocks ('id', 'stock', 'price', 'numshares', 'date') VALUES (:uid, :sym, :total, :shares, strftime('%s','now'));", uid=session["user_id"], sym=stockinfo["symbol"], total=totalprice, shares=int(numshares))
-        return render_template("index.html")
+        if sumofdeleted > 0:
+            db.execute("INSERT into userhistory ('id', 'stock', 'price', 'numshares', 'date', 'action') VALUES (:uid, :sym, :total, :shares, strftime('%s','now'), 'Bought');",
+             uid=session["user_id"], sym=stockinfo["symbol"], total=totalprice, shares=addedshares)
+        else:
+            db.execute("INSERT into userhistory ('id', 'stock', 'price', 'numshares', 'date', 'action') VALUES (:uid, :sym, :total, :shares, strftime('%s','now'), 'Bought');",
+             uid=session["user_id"], sym=stockinfo["symbol"], total=totalprice, shares=numshares)
+        db.execute("INSERT into userstocks ('id', 'stock', 'price', 'numshares') VALUES (:uid, :sym, :total, :shares);",
+         uid=session["user_id"], sym=stockinfo["symbol"], total=stockinfo["price"], shares=int(numshares))
+        return render_template("buy.html")
     else:
         return render_template("buy.html")
 
@@ -75,8 +103,9 @@ def buy():
 @app.route("/history")
 @login_required
 def history():
-    """Show history of transactions"""
-    return apology("TODO")
+    curhist = db.execute("SELECT * FROM userhistory WHERE id = :uid;", uid=session["user_id"])
+    print(curhist)
+    return render_template("history.html", curhis=curhist)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -171,7 +200,27 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    return apology("TODO")
+    names = db.execute("SELECT * FROM userstocks WHERE id = :uid;", uid=session["user_id"])
+    oldcash = db.execute("SELECT cash FROM users WHERE id = :oid;", oid=session["user_id"])
+    if request.method == "POST":
+        numshares = float(request.form.get("numshares"))
+        chosenstock = request.form.get("symbol")
+        stockinfo = lookup(chosenstock)
+        newcash = oldcash[0]['cash'] + stockinfo['price'] * numshares
+        for row in range(len(names)):
+            if chosenstock == names[row]['stock'] and numshares > names[row]['numshares']:
+                return apology("You do not have enough shares", 403)
+            elif chosenstock == names[row]['stock']:
+                newnumshares = names[row]['numshares'] - numshares
+                db.execute("UPDATE userstocks SET numshares = :new WHERE id = :sid and stock = :s;", new=newnumshares, sid=session["user_id"], s=chosenstock)
+                db.execute("INSERT into userhistory ('id', 'stock', 'price', 'numshares', 'date', 'action') VALUES (:cid, :s, :p, :n, strftime('%s','now'), 'Sold');",
+                 cid=session["user_id"], s=chosenstock, p=stockinfo['price'], n=numshares)
+                db.execute("UPDATE users SET cash = :c WHERE id = :mid;", c=newcash, mid=session["user_id"])
+                if newnumshares == 0:
+                    db.execute("DELETE FROM userstocks WHERE id = :yid and stock = :sto;", yid=session["user_id"], sto=chosenstock)
+                return render_template("sell.html", names=names)
+    else:
+        return render_template("sell.html", names=names)
 
 
 def errorhandler(e):

@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Your profile
+{% endblock %}
+
+{% block main %}
+
+    <table>
+
+        <tr><th>Stock Symbol</th><th># of Shares</th><th>Total Price</th><th>Action</th><th>Date</th></tr>
+        {% for row in range(curhis|length) %}
+            <tr><td>{{curhis[row]['stock']}}</td><td>{{curhis[row]['numshares']}}</td><td>{{curhis[row]['price']}}</td><td>{{curhis[row]['action']}}</td><td>{{curhis[row]['date']}}</td></tr>
+        {% endfor %}
+
+    </table>
+
+{% endblock %}

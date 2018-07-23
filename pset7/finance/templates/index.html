@@ -1,11 +1,20 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Get a Quote
+    Your profile
 {% endblock %}
 
 {% block main %}
 
+    <table>
 
+        <tr><th>Stock Symbol</th><th># of Shares</th><th>Current Price</th><th>Total</th></tr>
+        {% for row in range(matrix|length) %}
+            <tr><td>{{matrix[row]['stock']}}</td><td>{{matrix[row]['numshares']}}</td><td>{{matrix[row]['price']}}</td><td>{{matrix[row]['total']}}</td></tr>
+        {% endfor %}
+        <tr><td colspan="2"></td><th>Cash Total</th><td>{{newcash}}</td></tr>
+        <tr><td colspan="2"></td><th>Total Holdings</th><td>{{sumtotal}}</td></tr>
+
+    </table>
 
 {% endblock %}

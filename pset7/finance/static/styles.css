@@ -45,3 +45,16 @@ main img
     /* constrain images on small screens */
     max-width: 100%;
 }
+
+table
+{
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
